@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>카카오맵 예제</title>
+</head>
+
+<body>
+<div id="map" style="width:500px;height:400px;"></div>
+<button onclick="saveAsImage()">지도 저장</button>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7bce1a325bf4b037d427f1ee5494fe6e"></script>
+<script th:inline="javascript">
+    var container = document.getElementById('map');
+    var x = /*[[${x}]]*/ ''; // x 좌표
+    var y = /*[[${y}]]*/ ''; // y 좌표
+    console.log("x 좌표:", x);
+    console.log("y 좌표:", y);
+
+
+
+    var centerPosition = new kakao.maps.LatLng(x, y);
+    var options = {
+        center: centerPosition,
+        level: 3
+    };
+    var map = new kakao.maps.Map(container, options);
+
+    var crosswalks = [
+        { x: 33.4607809, y: 126.60 } // 임시
+    ];
+    var markerPosition  = new kakao.maps.LatLng(33.4607809, 126.60 );
+
+    var marker = new kakao.maps.Marker({
+        position: markerPosition
+    });
+    marker.setMap(map);
+
+    function checkAndSendResult() {
+        var bounds = map.getBounds();
+        var result = crossin(bounds) ? 1 : 0;
+        console.log("횡단보도 포함 여부:", result);
+
+        sendResultToServer(result);
+
+    }
+
+    function sendResultToServer(result) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://172.30.148.253:8080/getresult", true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                console.log("컨트롤러 전송.");
+            }
+        };
+        xhr.send(JSON.stringify({ result: result }));
+    }
+
+    function crossin(bounds) {
+        for (var i = 0; i < crosswalks.length; i++) {
+            var crosswalk = crosswalks[i];
+            var crosswalkPosition = new kakao.maps.LatLng(crosswalk.x, crosswalk.y);
+            if (bounds.contain(crosswalkPosition)) {
+                return true; // 횡단보도o
+            }
+        }
+        return false; // 횡단보도 x
+    }
+
+
+    kakao.maps.event.addListener(map, 'idle', function (){
+        checkAndSendResult();
+
+    });
+</script>
+</body>
+
+</html>
