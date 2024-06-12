@@ -1,20 +1,28 @@
 package com.capMap.capMap.Controller;
 
-import com.capMap.capMap.domain.Location;
+import com.capMap.capMap.Service.crossLocService;
 
+
+import com.capMap.capMap.domain.cross;
 import org.springframework.stereotype.Controller;
+
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 
 @Controller
 public class MainController {
 
-    private Location loc;
+    private final crossLocService crossLocService;
+
+    public MainController(crossLocService crossLocService) {
+        this.crossLocService = crossLocService;
+    }
     private String result;
 
-    @GetMapping("/sendlocation") // 플러터에서 받을 정보
+    @GetMapping("/sendlocationn") // 플러터에서 받을 정보
     public String getLocation(@RequestParam("x") String x, @RequestParam("y") String y, Model model) {
         model.addAttribute("x", x);
         model.addAttribute("y", y);
@@ -31,9 +39,22 @@ public class MainController {
         return result;
     }
 
+    @GetMapping("/sendlocation")
+    @ResponseBody
+    public Integer getLocation(@RequestParam("x") double x, @RequestParam("y") double y) {
+        double distance = 0.05;
+        boolean isWithinDistance = crossLocService.isCoordinateWithinDistance(x, y, distance);
+        System.out.println(isWithinDistance);
+        return isWithinDistance ? 1 : 0;
 
-
-
+    }
 
 
 }
+
+
+
+
+
+
+

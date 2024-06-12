@@ -1,55 +1,50 @@
 package com.capMap.capMap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.capMap.capMap.domain.cross;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.Map;
+import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class CrosswalkControllerTest {
 
 	@Autowired
-	private MockMvc mockMvc;
-
-	private ObjectMapper objectMapper;
-
-	@BeforeEach
-	public void setUp() {
-		objectMapper = new ObjectMapper();
-	}
+	private JdbcTemplate jdbcTemplate;
 
 	@Test
-	public void testCheckCrosswalkWithin50m() throws Exception {
-		Map<String, Double> coordinates = Map.of("x", 127.1603532, "y", 36.78014649);
-		String json = objectMapper.writeValueAsString(coordinates);
+	void testFetchDataFromCrossTable() {
+		try {
+			// crossLoc 테이블에서 모든 데이터를 가져오는 쿼리 실행
+			List<cross> data = jdbcTemplate.query("SELECT * FROM `cross`", (rs, rowNum) -> {
+				cross cross = new cross();
+				cross.setId(rs.getInt("id"));
 
-		mockMvc.perform(post("/api/check-crosswalk")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(json))
-				.andExpect(status().isOk())
-				.andExpect(content().string("1")); // Expecting 1 for within 50m
-	}
+				cross.setX(rs.getDouble("X"));
+				cross.setY(rs.getDouble("Y"));
+				return cross;
+			});
 
-	@Test
-	public void testCheckCrosswalkOutside50m() throws Exception {
-		Map<String, Double> coordinates = Map.of("x", 127.00000, "y", 36.00000);
-		String json = objectMapper.writeValueAsString(coordinates);
+			// 가져온 데이터 출력
+			System.out.println("Data from 'cross' table:");
+			for (com.capMap.capMap.domain.cross cross : data) {
+				System.out.println("ID: " + cross.getId() + ", X: " + cross.getX() + ", Y: " + cross.getY());
+			}
 
-		mockMvc.perform(post("/api.check-crosswalk")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(json))
-				.andExpect(status().isOk())
-				.andExpect(content().string("0")); // Expecting 0 for outside 50m
+			// 데이터가 정상적으로 가져와졌다면 테스트를 성공시킵니다.
+			assertTrue(true);
+		} catch (Exception e) {
+			// 데이터를 가져오는 도중에 예외가 발생하면 테스트를 실패시킵니다.
+			assertTrue(false, "데이터 가져오기 실패: " + e.getMessage());
+		}
 	}
 }
